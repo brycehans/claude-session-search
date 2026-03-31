@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -111,6 +112,29 @@ def extract_messages(jsonl_path, deep=False):
                     "text": text,
                     "timestamp": timestamp,
                 }
+
+
+def search_messages(messages, query, case_sensitive=False, context=0):
+    """Search messages for a query pattern, returning matches with context."""
+    flags = 0 if case_sensitive else re.IGNORECASE
+    try:
+        pattern = re.compile(query, flags)
+    except re.error:
+        pattern = re.compile(re.escape(query), flags)
+
+    results = []
+    for i, msg in enumerate(messages):
+        if pattern.search(msg["text"]):
+            match = {
+                "role": msg["role"],
+                "text": msg["text"],
+                "timestamp": msg["timestamp"],
+                "context_before": messages[max(0, i - context):i] if context > 0 else [],
+                "context_after": messages[i + 1:i + 1 + context] if context > 0 else [],
+            }
+            results.append(match)
+
+    return results
 
 
 def parse_args(argv=None):
