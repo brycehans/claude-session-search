@@ -230,9 +230,61 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
-def main(argv=None):
+def main(argv=None, claude_dir=CLAUDE_PROJECTS_DIR):
     args = parse_args(argv)
-    return 0
+
+    # Resolve project
+    project_dir = resolve_project_dir(args.project, claude_dir=claude_dir)
+    if not project_dir:
+        print(f"Error: No Claude project found for path: {args.project}", file=sys.stderr)
+        return 1
+
+    # Load and filter sessions
+    entries = load_sessions(project_dir)
+    entries = filter_sessions(
+        entries,
+        after=args.after,
+        before=args.before,
+        branch=args.branch,
+    )
+
+    if not entries:
+        print("No sessions match the given filters.")
+        return 1
+
+    # Search each session
+    use_color = not args.json_output and sys.stdout.isatty()
+    session_results = []
+
+    for entry in entries:
+        jsonl_path = Path(project_dir) / f"{entry['sessionId']}.jsonl"
+        if not jsonl_path.exists():
+            continue
+
+        messages = list(extract_messages(str(jsonl_path), deep=args.deep))
+        matches = search_messages(
+            messages,
+            args.query,
+            case_sensitive=args.case_sensitive,
+            context=args.context,
+        )
+
+        if matches:
+            session_results.append({
+                "sessionId": entry["sessionId"],
+                "created": entry.get("created", ""),
+                "branch": entry.get("gitBranch", ""),
+                "summary": entry.get("summary", ""),
+                "matches": matches,
+            })
+
+    # Output
+    if args.json_output:
+        print(format_json_output(session_results))
+    else:
+        print(format_terminal_output(session_results, use_color=use_color))
+
+    return 0 if session_results else 1
 
 
 if __name__ == "__main__":
