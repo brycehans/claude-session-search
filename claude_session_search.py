@@ -3,6 +3,20 @@
 
 import argparse
 import sys
+from pathlib import Path
+
+
+CLAUDE_PROJECTS_DIR = str(Path.home() / ".claude" / "projects")
+
+
+def resolve_project_dir(project_path, claude_dir=CLAUDE_PROJECTS_DIR):
+    """Convert a filesystem path to the matching ~/.claude/projects/ directory."""
+    normalized = str(Path(project_path).resolve()).rstrip("/")
+    dir_name = normalized.replace("/", "-")
+    candidate = Path(claude_dir) / dir_name
+    if candidate.is_dir():
+        return str(candidate)
+    return None
 
 
 def parse_args(argv=None):
