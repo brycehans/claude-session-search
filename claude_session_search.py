@@ -62,6 +62,57 @@ def filter_sessions(entries, after=None, before=None, branch=None):
     return result
 
 
+def extract_messages(jsonl_path, deep=False):
+    """Extract searchable messages from a JSONL transcript file."""
+    with open(jsonl_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+            msg_type = record.get("type")
+            if msg_type not in ("user", "assistant"):
+                continue
+
+            message = record.get("message", {})
+            content = message.get("content", "")
+            timestamp = record.get("timestamp", "")
+
+            text_parts = []
+
+            if isinstance(content, str):
+                text_parts.append(content)
+            elif isinstance(content, list):
+                for block in content:
+                    block_type = block.get("type", "")
+                    if block_type == "text":
+                        text_parts.append(block.get("text", ""))
+                    elif block_type == "tool_use" and deep:
+                        tool_name = block.get("name", "")
+                        tool_input = json.dumps(block.get("input", {}))
+                        text_parts.append(f"[tool:{tool_name}] {tool_input}")
+                    elif block_type == "tool_result" and deep:
+                        result_content = block.get("content", "")
+                        if isinstance(result_content, str):
+                            text_parts.append(f"[result] {result_content}")
+                        elif isinstance(result_content, list):
+                            for rc in result_content:
+                                if rc.get("type") == "text":
+                                    text_parts.append(f"[result] {rc.get('text', '')}")
+
+            text = "\n".join(text_parts).strip()
+            if text:
+                yield {
+                    "role": message.get("role", msg_type),
+                    "text": text,
+                    "timestamp": timestamp,
+                }
+
+
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         prog="claude-session-search",
