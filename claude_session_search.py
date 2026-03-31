@@ -42,11 +42,41 @@ def parse_timestamp(ts_string):
 
 
 def load_sessions(project_dir):
-    """Load session entries from a project's sessions-index.json."""
-    index_path = Path(project_dir) / "sessions-index.json"
-    with open(index_path) as f:
-        data = json.load(f)
-    return data.get("entries", [])
+    """Load session entries by discovering JSONL files and enriching with index metadata."""
+    project_path = Path(project_dir)
+
+    # Load index for metadata (may not cover all files)
+    index_by_id = {}
+    index_path = project_path / "sessions-index.json"
+    if index_path.exists():
+        with open(index_path) as f:
+            data = json.load(f)
+        for entry in data.get("entries", []):
+            index_by_id[entry["sessionId"]] = entry
+
+    # Discover all JSONL files on disk
+    entries = []
+    for jsonl_file in sorted(project_path.glob("*.jsonl")):
+        session_id = jsonl_file.stem
+        if session_id in index_by_id:
+            entries.append(index_by_id[session_id])
+        else:
+            # Build minimal entry from file metadata
+            stat = jsonl_file.stat()
+            created = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
+            entries.append({
+                "sessionId": session_id,
+                "fullPath": str(jsonl_file),
+                "firstPrompt": "",
+                "summary": "",
+                "messageCount": 0,
+                "created": created,
+                "modified": created,
+                "gitBranch": "",
+                "projectPath": "",
+            })
+
+    return entries
 
 
 def filter_sessions(entries, after=None, before=None, branch=None):

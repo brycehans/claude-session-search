@@ -25,6 +25,9 @@ def test_load_sessions(tmp_path):
     project_dir.mkdir()
     entries = [make_entry(sessionId="s1"), make_entry(sessionId="s2")]
     (project_dir / "sessions-index.json").write_text(json.dumps({"version": 1, "entries": entries}))
+    # Create matching JSONL files on disk
+    (project_dir / "s1.jsonl").write_text("")
+    (project_dir / "s2.jsonl").write_text("")
     sessions = load_sessions(str(project_dir))
     assert len(sessions) == 2
     assert sessions[0]["sessionId"] == "s1"
