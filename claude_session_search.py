@@ -2,7 +2,9 @@
 """Search Claude Code session transcripts."""
 
 import argparse
+import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -17,6 +19,47 @@ def resolve_project_dir(project_path, claude_dir=CLAUDE_PROJECTS_DIR):
     if candidate.is_dir():
         return str(candidate)
     return None
+
+
+def parse_timestamp(ts_string):
+    """Parse a flexible timestamp string into a datetime object."""
+    formats = [
+        "%Y-%m-%dT%H:%M:%S.%fZ",
+        "%Y-%m-%dT%H:%M:%SZ",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%dT%H:%M",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%Y-%m-%d",
+    ]
+    for fmt in formats:
+        try:
+            return datetime.strptime(ts_string, fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    raise ValueError(f"Could not parse timestamp: {ts_string}")
+
+
+def load_sessions(project_dir):
+    """Load session entries from a project's sessions-index.json."""
+    index_path = Path(project_dir) / "sessions-index.json"
+    with open(index_path) as f:
+        data = json.load(f)
+    return data.get("entries", [])
+
+
+def filter_sessions(entries, after=None, before=None, branch=None):
+    """Filter session entries by timestamp and branch."""
+    result = entries
+    if after:
+        after_dt = parse_timestamp(after)
+        result = [e for e in result if parse_timestamp(e["created"]) > after_dt]
+    if before:
+        before_dt = parse_timestamp(before)
+        result = [e for e in result if parse_timestamp(e["created"]) < before_dt]
+    if branch:
+        result = [e for e in result if e.get("gitBranch") == branch]
+    return result
 
 
 def parse_args(argv=None):
