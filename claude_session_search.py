@@ -137,6 +137,60 @@ def search_messages(messages, query, case_sensitive=False, context=0):
     return results
 
 
+def format_terminal_output(session_results, use_color=True):
+    """Format search results for terminal display."""
+    if not session_results:
+        return "No matches found."
+
+    lines = []
+    for session in session_results:
+        sid = session["sessionId"][:8]
+        created = session["created"][:19].replace("T", " ")
+        branch = session.get("branch", "?")
+        summary = session.get("summary", "")
+
+        if use_color:
+            header = f"\033[1;36m── session {sid} ({created}, branch: {branch}) ──\033[0m"
+            if summary:
+                header += f"\n\033[2m   {summary}\033[0m"
+        else:
+            header = f"── session {sid} ({created}, branch: {branch}) ──"
+            if summary:
+                header += f"\n   {summary}"
+
+        lines.append(header)
+
+        for match in session["matches"]:
+            for ctx in match.get("context_before", []):
+                role_tag = f"[{ctx['role']}]"
+                if use_color:
+                    lines.append(f"  \033[2m{role_tag}  {ctx['text'][:200]}\033[0m")
+                else:
+                    lines.append(f"  {role_tag}  {ctx['text'][:200]}")
+
+            role_tag = f"[{match['role']}]"
+            if use_color:
+                lines.append(f"  \033[1;33m{role_tag}\033[0m  {match['text'][:200]}")
+            else:
+                lines.append(f"  {role_tag}  {match['text'][:200]}")
+
+            for ctx in match.get("context_after", []):
+                role_tag = f"[{ctx['role']}]"
+                if use_color:
+                    lines.append(f"  \033[2m{role_tag}  {ctx['text'][:200]}\033[0m")
+                else:
+                    lines.append(f"  {role_tag}  {ctx['text'][:200]}")
+
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def format_json_output(session_results):
+    """Format search results as JSON for piping to Claude."""
+    return json.dumps(session_results, indent=2)
+
+
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         prog="claude-session-search",
