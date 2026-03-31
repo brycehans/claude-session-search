@@ -8,6 +8,16 @@ Search through your Claude Code session transcripts from the command line.
 claude-session-search "auth middleware" --project /Users/bryce/Dev/my-project
 ```
 
+## Installation
+
+```bash
+# Clone the repo
+git clone <repo-url> ~/Dev/claude-session-search
+
+# Symlink to PATH
+ln -s ~/Dev/claude-session-search/claude_session_search.py /usr/local/bin/claude-session-search
+```
+
 ## How it works
 
 Claude Code stores session transcripts as JSONL files under `~/.claude/projects/`. Each project directory contains one `.jsonl` file per session, plus a `sessions-index.json` with metadata (summaries, dates, branches).
@@ -144,6 +154,18 @@ With `--json`, output is a JSON array of session objects:
 ## How sessions are discovered
 
 The tool scans for `.jsonl` files on disk in the project directory rather than relying solely on `sessions-index.json`. This is because the index can become stale -- it may reference deleted sessions or miss sessions that exist on disk. When a file has a matching entry in the index, it inherits the metadata (summary, branch, timestamps). Otherwise, a minimal entry is constructed from the file's modification time.
+
+## Claude Code skill
+
+A Claude Code skill is included at `skills/searching-session-transcripts/SKILL.md`. This lets Claude automatically use the tool when you ask about past conversations.
+
+To install:
+
+```bash
+cp -r skills/searching-session-transcripts ~/.claude/skills/
+```
+
+Once installed, Claude will pick it up when you ask things like "when did we discuss auth?" or "find the session where we decided on the database schema".
 
 ## Requirements
 
