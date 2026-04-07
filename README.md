@@ -9,7 +9,7 @@ Search through your Claude Code session transcripts from the command line.
 claude-session-search "auth middleware"
 
 # Search a specific project
-claude-session-search "auth middleware" --project /Users/bryce/Dev/my-project
+claude-session-search "auth middleware" --project ~/Dev/my-project
 ```
 
 ## Installation
@@ -76,20 +76,20 @@ claude-session-search "database migration"
 ### Search a specific project
 
 ```bash
-claude-session-search "database migration" --project /Users/bryce/Dev/my-app
+claude-session-search "database migration" --project ~/Dev/my-app
 ```
 
 ### Search within a date range
 
 ```bash
-claude-session-search "deploy" --project /Users/bryce/Dev/my-app \
+claude-session-search "deploy" --project ~/Dev/my-app \
   --after "2026-03-01" --before "2026-03-15"
 ```
 
 ### Search a specific branch
 
 ```bash
-claude-session-search "refactor" --project /Users/bryce/Dev/my-app --branch develop
+claude-session-search "refactor" --project ~/Dev/my-app --branch develop
 ```
 
 ### Search tool calls too
@@ -97,26 +97,26 @@ claude-session-search "refactor" --project /Users/bryce/Dev/my-app --branch deve
 By default, only the text of human and assistant messages is searched. Use `--deep` to also search through tool calls (Bash commands, file reads, grep results, etc.):
 
 ```bash
-claude-session-search "package.json" --project /Users/bryce/Dev/my-app --deep
+claude-session-search "package.json" --project ~/Dev/my-app --deep
 ```
 
 ### Pipe JSON to Claude for analysis
 
 ```bash
-claude-session-search "auth" --project /Users/bryce/Dev/my-app --json \
+claude-session-search "auth" --project ~/Dev/my-app --json \
   | claude "summarize what decisions were made about auth"
 ```
 
 ### Get more context around matches
 
 ```bash
-claude-session-search "bug" --project /Users/bryce/Dev/my-app --context 3
+claude-session-search "bug" --project ~/Dev/my-app --context 3
 ```
 
 ### Use regex
 
 ```bash
-claude-session-search "TODO|FIXME|HACK" --project /Users/bryce/Dev/my-app
+claude-session-search "TODO|FIXME|HACK" --project ~/Dev/my-app
 ```
 
 ## Terminal output

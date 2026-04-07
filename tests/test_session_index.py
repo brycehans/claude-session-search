@@ -14,7 +14,7 @@ def make_entry(**overrides):
         "created": "2026-03-15T10:00:00.000Z",
         "modified": "2026-03-15T11:00:00.000Z",
         "gitBranch": "main",
-        "projectPath": "/Users/bryce/Dev/foo",
+        "projectPath": "/home/user/projects/foo",
     }
     base.update(overrides)
     return base

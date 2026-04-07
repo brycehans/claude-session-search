@@ -239,7 +239,7 @@ def parse_args(argv=None):
     parser.add_argument("query", help="Search term (regex supported)")
     parser.add_argument(
         "--project",
-        help="Working directory path (e.g. /Users/bryce/Dev/my-project). Omit to search all projects.",
+        help="Working directory path (e.g. ~/Dev/my-project). Omit to search all projects.",
     )
     parser.add_argument("--after", help="Only sessions after this timestamp")
     parser.add_argument("--before", help="Only sessions before this timestamp")
