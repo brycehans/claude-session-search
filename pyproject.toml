@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude-session-search"
+version = "0.1.0"
+description = "Search Claude Code session transcripts from the command line"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+
+[tool.setuptools]
+py-modules = ["claude_session_search"]
+
+[project.scripts]
+claude-session-search = "claude_session_search:cli"

@@ -352,5 +352,10 @@ def main(argv=None, claude_dir=CLAUDE_PROJECTS_DIR):
     return 0 if session_results else 1
 
 
-if __name__ == "__main__":
+def cli():
+    """Entry point for console_scripts."""
     sys.exit(main())
+
+
+if __name__ == "__main__":
+    cli()

@@ -15,11 +15,15 @@ claude-session-search "auth middleware" --project ~/Dev/my-project
 ## Installation
 
 ```bash
-# Clone the repo
-git clone <repo-url> ~/Dev/claude-session-search
+pip install git+https://github.com/brycehans/claude-session-search.git
+```
 
-# Symlink to PATH
-ln -s ~/Dev/claude-session-search/claude_session_search.py /usr/local/bin/claude-session-search
+Or install from a local clone:
+
+```bash
+git clone https://github.com/brycehans/claude-session-search.git
+cd claude-session-search
+pip install .
 ```
 
 ## How it works
