@@ -5,6 +5,10 @@ Search through your Claude Code session transcripts from the command line.
 ## Quick start
 
 ```bash
+# Search all projects
+claude-session-search "auth middleware"
+
+# Search a specific project
 claude-session-search "auth middleware" --project /Users/bryce/Dev/my-project
 ```
 
@@ -40,7 +44,7 @@ claude-session-search <query> [options]
 
 | Option | Description |
 |--------|-------------|
-| `--project PATH` | **(required)** Path to the project working directory |
+| `--project PATH` | Path to the project working directory. Omit to search all projects. |
 | `--after TIMESTAMP` | Only include sessions created after this time |
 | `--before TIMESTAMP` | Only include sessions created before this time |
 | `--branch NAME` | Only include sessions on this git branch |
@@ -54,10 +58,11 @@ claude-session-search <query> [options]
 The `--after` and `--before` flags accept several formats:
 
 ```
-2026-03-30T17:30:00.000Z    # Full ISO with milliseconds
-2026-03-30T17:30:00          # ISO without timezone
-2026-03-30 17:30             # Date and time
-2026-03-30                   # Date only (midnight UTC)
+2026-03-30T17:30:00.000Z       # Full ISO with milliseconds
+2026-03-30T17:30:00+00:00      # ISO with UTC offset
+2026-03-30T17:30:00             # ISO without timezone
+2026-03-30 17:30               # Date and time
+2026-03-30                     # Date only (midnight UTC)
 ```
 
 ## Examples

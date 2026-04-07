@@ -24,6 +24,8 @@ def resolve_project_dir(project_path, claude_dir=CLAUDE_PROJECTS_DIR):
 
 def parse_timestamp(ts_string):
     """Parse a flexible timestamp string into a datetime object."""
+    # Normalize +00:00 offset to Z for simpler format matching
+    ts_string = ts_string.replace("+00:00", "Z")
     formats = [
         "%Y-%m-%dT%H:%M:%S.%fZ",
         "%Y-%m-%dT%H:%M:%SZ",
@@ -178,13 +180,21 @@ def format_terminal_output(session_results, use_color=True):
         created = session["created"][:19].replace("T", " ")
         branch = session.get("branch", "?")
         summary = session.get("summary", "")
+        project = session.get("project", "")
+
+        meta_parts = [created]
+        if project:
+            meta_parts.append(f"project: {project}")
+        if branch:
+            meta_parts.append(f"branch: {branch}")
+        meta = ", ".join(meta_parts)
 
         if use_color:
-            header = f"\033[1;36m── session {sid} ({created}, branch: {branch}) ──\033[0m"
+            header = f"\033[1;36m── session {sid} ({meta}) ──\033[0m"
             if summary:
                 header += f"\n\033[2m   {summary}\033[0m"
         else:
-            header = f"── session {sid} ({created}, branch: {branch}) ──"
+            header = f"── session {sid} ({meta}) ──"
             if summary:
                 header += f"\n   {summary}"
 
@@ -229,8 +239,7 @@ def parse_args(argv=None):
     parser.add_argument("query", help="Search term (regex supported)")
     parser.add_argument(
         "--project",
-        required=True,
-        help="Working directory path (e.g. /Users/bryce/Dev/my-project)",
+        help="Working directory path (e.g. /Users/bryce/Dev/my-project). Omit to search all projects.",
     )
     parser.add_argument("--after", help="Only sessions after this timestamp")
     parser.add_argument("--before", help="Only sessions before this timestamp")
@@ -263,22 +272,36 @@ def parse_args(argv=None):
 def main(argv=None, claude_dir=CLAUDE_PROJECTS_DIR):
     args = parse_args(argv)
 
-    # Resolve project
-    project_dir = resolve_project_dir(args.project, claude_dir=claude_dir)
-    if not project_dir:
-        print(f"Error: No Claude project found for path: {args.project}", file=sys.stderr)
-        return 1
+    # Resolve project directories
+    if args.project:
+        project_dir = resolve_project_dir(args.project, claude_dir=claude_dir)
+        if not project_dir:
+            print(f"Error: No Claude project found for path: {args.project}", file=sys.stderr)
+            return 1
+        project_dirs = [project_dir]
+    else:
+        claude_path = Path(claude_dir)
+        if not claude_path.is_dir():
+            print(f"Error: Claude projects directory not found: {claude_dir}", file=sys.stderr)
+            return 1
+        project_dirs = sorted(
+            str(d) for d in claude_path.iterdir() if d.is_dir()
+        )
 
-    # Load and filter sessions
-    entries = load_sessions(project_dir)
-    entries = filter_sessions(
-        entries,
-        after=args.after,
-        before=args.before,
-        branch=args.branch,
-    )
+    # Load and filter sessions across all project dirs
+    all_entries = []  # list of (project_dir, entry) tuples
+    for pdir in project_dirs:
+        entries = load_sessions(pdir)
+        entries = filter_sessions(
+            entries,
+            after=args.after,
+            before=args.before,
+            branch=args.branch,
+        )
+        for entry in entries:
+            all_entries.append((pdir, entry))
 
-    if not entries:
+    if not all_entries:
         print("No sessions match the given filters.")
         return 1
 
@@ -286,8 +309,8 @@ def main(argv=None, claude_dir=CLAUDE_PROJECTS_DIR):
     use_color = not args.json_output and sys.stdout.isatty()
     session_results = []
 
-    for entry in entries:
-        jsonl_path = Path(project_dir) / f"{entry['sessionId']}.jsonl"
+    for pdir, entry in all_entries:
+        jsonl_path = Path(pdir) / f"{entry['sessionId']}.jsonl"
         if not jsonl_path.exists():
             continue
 
@@ -300,19 +323,31 @@ def main(argv=None, claude_dir=CLAUDE_PROJECTS_DIR):
         )
 
         if matches:
-            session_results.append({
+            result = {
                 "sessionId": entry["sessionId"],
                 "created": entry.get("created", ""),
                 "branch": entry.get("gitBranch", ""),
                 "summary": entry.get("summary", ""),
                 "matches": matches,
-            })
+            }
+            if not args.project:
+                # Strip home dir prefix for readability
+                dir_name = Path(pdir).name
+                home_prefix = str(Path.home()).replace("/", "-")
+                if dir_name.startswith(home_prefix):
+                    result["project"] = dir_name[len(home_prefix):].lstrip("-") or "~"
+                else:
+                    result["project"] = dir_name
+            session_results.append(result)
 
     # Output
     if args.json_output:
         print(format_json_output(session_results))
     else:
         print(format_terminal_output(session_results, use_color=use_color))
+
+    if not session_results and not args.deep:
+        print("Tip: try --deep to also search tool calls and results.", file=sys.stderr)
 
     return 0 if session_results else 1
 
