@@ -231,12 +231,54 @@ def format_json_output(session_results):
     return json.dumps(session_results, indent=2)
 
 
+def format_transcript(messages, use_color=True):
+    """Format a full session transcript for terminal display."""
+    lines = []
+    for msg in messages:
+        role = msg["role"]
+        ts = msg.get("timestamp", "")[:19].replace("T", " ")
+        text = msg["text"]
+
+        if use_color:
+            role_color = "\033[1;32m" if role == "user" else "\033[1;34m"
+            lines.append(f"{role_color}[{role}]\033[0m \033[2m{ts}\033[0m")
+            lines.append(f"  {text}")
+        else:
+            lines.append(f"[{role}] {ts}")
+            lines.append(f"  {text}")
+        lines.append("")
+
+    return "\n".join(lines) if lines else "No messages in session."
+
+
+def find_session_file(session_id, project_dirs):
+    """Find a session JSONL file by full or prefix session ID across project dirs."""
+    for pdir in project_dirs:
+        ppath = Path(pdir)
+        # Try exact match first
+        exact = ppath / f"{session_id}.jsonl"
+        if exact.exists():
+            return str(exact), pdir
+        # Try prefix match
+        matches = list(ppath.glob(f"{session_id}*.jsonl"))
+        if len(matches) == 1:
+            return str(matches[0]), pdir
+        elif len(matches) > 1:
+            ids = [m.stem[:12] for m in matches]
+            raise ValueError(f"Ambiguous session prefix '{session_id}', matches: {', '.join(ids)}")
+    return None, None
+
+
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(
         prog="claude-session-search",
         description="Search Claude Code session transcripts",
     )
-    parser.add_argument("query", help="Search term (regex supported)")
+    parser.add_argument("query", nargs="?", help="Search term (regex supported)")
+    parser.add_argument(
+        "--session",
+        help="Fetch full transcript for a session ID (full or prefix)",
+    )
     parser.add_argument(
         "--project",
         help="Working directory path (e.g. ~/Dev/my-project). Omit to search all projects.",
@@ -272,6 +314,10 @@ def parse_args(argv=None):
 def main(argv=None, claude_dir=CLAUDE_PROJECTS_DIR):
     args = parse_args(argv)
 
+    if not args.session and not args.query:
+        print("Error: either a search query or --session is required.", file=sys.stderr)
+        return 1
+
     # Resolve project directories
     if args.project:
         project_dir = resolve_project_dir(args.project, claude_dir=claude_dir)
@@ -287,6 +333,24 @@ def main(argv=None, claude_dir=CLAUDE_PROJECTS_DIR):
         project_dirs = sorted(
             str(d) for d in claude_path.iterdir() if d.is_dir()
         )
+
+    # --session mode: fetch full transcript
+    if args.session:
+        try:
+            jsonl_path, pdir = find_session_file(args.session, project_dirs)
+        except ValueError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            return 1
+        if not jsonl_path:
+            print(f"Error: No session found matching '{args.session}'", file=sys.stderr)
+            return 1
+        messages = list(extract_messages(jsonl_path, deep=args.deep))
+        if args.json_output:
+            print(json.dumps(messages, indent=2))
+        else:
+            use_color = sys.stdout.isatty()
+            print(format_transcript(messages, use_color=use_color))
+        return 0
 
     # Load and filter sessions across all project dirs
     all_entries = []  # list of (project_dir, entry) tuples

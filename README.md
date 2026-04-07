@@ -10,6 +10,9 @@ claude-session-search "auth middleware"
 
 # Search a specific project
 claude-session-search "auth middleware" --project ~/Dev/my-project
+
+# Fetch full transcript for a known session
+claude-session-search --session 09cb08ea
 ```
 
 ## Installation
@@ -36,18 +39,20 @@ Claude Code stores session transcripts as JSONL files under `~/.claude/projects/
 
 ```
 claude-session-search <query> [options]
+claude-session-search --session <id> [options]
 ```
 
 ### Arguments
 
 | Argument | Description |
 |----------|-------------|
-| `query` | Search term. Supports regex (e.g. `"auth_v\d+"`) |
+| `query` | Search term. Supports regex (e.g. `"auth_v\d+"`). Required unless `--session` is used. |
 
 ### Options
 
 | Option | Description |
 |--------|-------------|
+| `--session ID` | Fetch full transcript for a session ID (full UUID or unambiguous prefix) |
 | `--project PATH` | Path to the project working directory. Omit to search all projects. |
 | `--after TIMESTAMP` | Only include sessions created after this time |
 | `--before TIMESTAMP` | Only include sessions created before this time |
@@ -70,6 +75,25 @@ The `--after` and `--before` flags accept several formats:
 ```
 
 ## Examples
+
+### Fetch a session transcript
+
+If you already know the session ID (from a previous search or from `~/.claude/projects/`), fetch the full transcript directly:
+
+```bash
+# Full session ID
+claude-session-search --session 09cb08ea-85c7-4bbb-8b15-a79227e3e83a
+
+# Prefix (must be unambiguous)
+claude-session-search --session 09cb08ea
+
+# Include tool calls and results
+claude-session-search --session 09cb08ea --deep
+
+# As JSON for piping
+claude-session-search --session 09cb08ea --json \
+  | claude "summarize this session"
+```
 
 ### Search all projects
 
@@ -166,8 +190,8 @@ The `project` field is included only when searching globally (no `--project` fla
 
 | Code | Meaning |
 |------|---------|
-| 0 | Matches found |
-| 1 | No matches found, or no sessions match filters |
+| 0 | Matches found, or session transcript fetched successfully |
+| 1 | No matches found, no sessions match filters, or session ID not found |
 
 ## How sessions are discovered
 

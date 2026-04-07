@@ -131,3 +131,62 @@ def test_filter_by_date(tmp_path, capsys):
         "--after", "2026-03-16",
     ], claude_dir=claude_dir)
     assert exit_code == 1  # Auth session is before the cutoff
+
+
+def test_session_fetch_full_id(tmp_path, capsys):
+    project_path, claude_dir = create_test_project(tmp_path)
+    exit_code = main([
+        "--session", "aaaaaaaa-1111-1111-1111-111111111111",
+        "--project", project_path,
+    ], claude_dir=claude_dir)
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    assert "auth middleware" in captured.out.lower()
+    assert "JWT tokens" in captured.out
+
+
+def test_session_fetch_prefix(tmp_path, capsys):
+    project_path, claude_dir = create_test_project(tmp_path)
+    exit_code = main([
+        "--session", "aaaaaaaa",
+        "--project", project_path,
+    ], claude_dir=claude_dir)
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    assert "auth middleware" in captured.out.lower()
+
+
+def test_session_fetch_json(tmp_path, capsys):
+    project_path, claude_dir = create_test_project(tmp_path)
+    exit_code = main([
+        "--session", "aaaaaaaa-1111-1111-1111-111111111111",
+        "--project", project_path,
+        "--json",
+    ], claude_dir=claude_dir)
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    parsed = json.loads(captured.out)
+    assert len(parsed) == 2  # user + assistant messages
+    assert parsed[0]["role"] == "user"
+
+
+def test_session_fetch_not_found(tmp_path, capsys):
+    project_path, claude_dir = create_test_project(tmp_path)
+    exit_code = main([
+        "--session", "zzzzzzzz-not-real",
+        "--project", project_path,
+    ], claude_dir=claude_dir)
+    assert exit_code == 1
+    captured = capsys.readouterr()
+    assert "No session found" in captured.err
+
+
+def test_session_fetch_across_projects(tmp_path, capsys):
+    """--session without --project searches all project dirs."""
+    project_path, claude_dir = create_test_project(tmp_path)
+    exit_code = main([
+        "--session", "bbbbbbbb-2222-2222-2222-222222222222",
+    ], claude_dir=claude_dir)
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    assert "database migration" in captured.out.lower()

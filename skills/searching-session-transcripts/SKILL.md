@@ -15,17 +15,21 @@ claude-session-search "<query>" [options]
 
 # Search a specific project
 claude-session-search "<query>" --project <path> [options]
+
+# Fetch full transcript by session ID (full or prefix)
+claude-session-search --session <id> [options]
 ```
 
 The user typically provides:
 1. **A keyword or topic** they remember discussing
 2. **A rough date range** for when it happened
 3. Optionally, **which project directory** the work was in (omit to search all)
+4. Or a **session ID** if they already know which session they want
 
 ## Workflow
 
 1. Run the search (globally or with `--project` if the user specifies one)
-2. Run the search
+2. If the user already has a session ID, use `--session <id>` to fetch the full transcript
 3. If too many results, narrow with `--after`/`--before` or `--branch`
 4. If too few, try broader terms, regex alternatives (`"auth|login|session"`), or `--deep`
 
@@ -41,6 +45,7 @@ The user typically provides:
 | `--json` | JSON output for analysis | |
 | `--context N` | Surrounding messages (default: 1) | `--context 3` |
 | `--case-sensitive` | Exact case matching | |
+| `--session ID` | Fetch full transcript by session ID (full or prefix) | `--session 09cb08ea` |
 
 Timestamps accept: `2026-03-30`, `2026-03-30 17:30`, `2026-03-30T17:30:00`, `2026-03-30T17:30:00+00:00`.
 
@@ -55,3 +60,4 @@ claude-session-search "auth" --project /path --json | claude "summarize what we 
 - **Broad then narrow:** Start with a single keyword, add date/branch filters if noisy
 - **Regex alternation:** `"TODO|FIXME|HACK"` or `"auth_v\d+"` for related terms
 - **Deep search:** Use `--deep` when the answer is in a file that was read or a command that was run, not in the conversation text itself
+- **Session fetch:** Use `--session` when you already have a session ID from a prior search and want the full conversation
