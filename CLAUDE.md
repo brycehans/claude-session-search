@@ -14,7 +14,10 @@ python3 -m pytest tests/test_search_engine.py -v
 # Run a single test
 python3 -m pytest tests/test_integration.py::test_search_finds_auth -v
 
-# Run the tool against real data
+# Run the tool against real data (all projects)
+./claude_session_search.py "query"
+
+# Run against a specific project
 ./claude_session_search.py "query" --project /path/to/project
 ```
 

@@ -26,7 +26,7 @@ ln -s ~/Dev/claude-session-search/claude_session_search.py /usr/local/bin/claude
 
 Claude Code stores session transcripts as JSONL files under `~/.claude/projects/`. Each project directory contains one `.jsonl` file per session, plus a `sessions-index.json` with metadata (summaries, dates, branches).
 
-`claude-session-search` discovers all JSONL files in the matching project directory, extracts the human and assistant message text, and runs your query against it. Sessions with metadata in the index get enriched with summaries, branch names, and timestamps.
+`claude-session-search` discovers all JSONL files in the matching project directory (or all project directories when `--project` is omitted), extracts the human and assistant message text, and runs your query against it. Sessions with metadata in the index get enriched with summaries, branch names, and timestamps.
 
 ## Usage
 
@@ -67,7 +67,13 @@ The `--after` and `--before` flags accept several formats:
 
 ## Examples
 
-### Find all discussions about a topic
+### Search all projects
+
+```bash
+claude-session-search "database migration"
+```
+
+### Search a specific project
 
 ```bash
 claude-session-search "database migration" --project /Users/bryce/Dev/my-app
@@ -115,10 +121,10 @@ claude-session-search "TODO|FIXME|HACK" --project /Users/bryce/Dev/my-app
 
 ## Terminal output
 
-Results are grouped by session, with a header showing the session ID, timestamp, branch, and summary (when available). Matching messages are highlighted, with context messages shown in dim text:
+Results are grouped by session, with a header showing the session ID, timestamp, branch, and summary (when available). When searching globally (no `--project`), the project name is also shown. Matching messages are highlighted, with context messages shown in dim text:
 
 ```
-── session 09cb08ea (2026-03-30 05:56, branch: feature/hidden-form-fields) ──
+── session 09cb08ea (2026-03-30 05:56, project: Dev-my-app, branch: feature/hidden-form-fields) ──
    PR review for hidden form fields
   [user]  can you review the auth middleware changes in this PR?
   [assistant]  Looking at the auth middleware, the main change is...
@@ -134,6 +140,7 @@ With `--json`, output is a JSON array of session objects:
   {
     "sessionId": "09cb08ea-85c7-4bbb-8b15-a79227e3e83a",
     "created": "2026-03-30T05:51:34.000Z",
+    "project": "Dev-my-app",
     "branch": "feature/hidden-form-fields",
     "summary": "PR review for hidden form fields",
     "matches": [
@@ -148,6 +155,8 @@ With `--json`, output is a JSON array of session objects:
   }
 ]
 ```
+
+The `project` field is included only when searching globally (no `--project` flag).
 
 ## Exit codes
 

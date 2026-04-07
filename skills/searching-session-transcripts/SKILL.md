@@ -10,17 +10,21 @@ Find past Claude Code conversations using `claude-session-search`.
 ## Usage
 
 ```bash
+# Search all projects
+claude-session-search "<query>" [options]
+
+# Search a specific project
 claude-session-search "<query>" --project <path> [options]
 ```
 
-The user typically provides three things:
+The user typically provides:
 1. **A keyword or topic** they remember discussing
 2. **A rough date range** for when it happened
-3. **Which project directory** the work was in
+3. Optionally, **which project directory** the work was in (omit to search all)
 
 ## Workflow
 
-1. Ask for any missing pieces (keyword, project path, date range)
+1. Run the search (globally or with `--project` if the user specifies one)
 2. Run the search
 3. If too many results, narrow with `--after`/`--before` or `--branch`
 4. If too few, try broader terms, regex alternatives (`"auth|login|session"`), or `--deep`
@@ -29,7 +33,7 @@ The user typically provides three things:
 
 | Flag | Purpose | Example |
 |------|---------|---------|
-| `--project PATH` | Project working directory (required) | `--project /Users/bryce/Dev/my-app` |
+| `--project PATH` | Project working directory (omit for all) | `--project /Users/bryce/Dev/my-app` |
 | `--after TS` | Sessions after this time | `--after "2026-03-01"` |
 | `--before TS` | Sessions before this time | `--before "2026-03-15"` |
 | `--branch NAME` | Filter by git branch | `--branch develop` |
@@ -38,7 +42,7 @@ The user typically provides three things:
 | `--context N` | Surrounding messages (default: 1) | `--context 3` |
 | `--case-sensitive` | Exact case matching | |
 
-Timestamps accept: `2026-03-30`, `2026-03-30 17:30`, `2026-03-30T17:30:00`.
+Timestamps accept: `2026-03-30`, `2026-03-30 17:30`, `2026-03-30T17:30:00`, `2026-03-30T17:30:00+00:00`.
 
 ## Piping to Claude for Analysis
 
