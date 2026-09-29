@@ -10,10 +10,22 @@ def test_resolve_project_dir_exact_match(tmp_path):
     # Use tmp_path as the fake project so resolve() won't mangle it
     fake_project = tmp_path / "myproject"
     fake_project.mkdir()
-    dir_name = str(fake_project.resolve()).replace("/", "-")
+    dir_name = str(fake_project.resolve()).replace("/", "-").replace(".", "-")
     project_dir = claude_dir / dir_name
     project_dir.mkdir(parents=True)
     (project_dir / "sessions-index.json").write_text('{"version":1,"entries":[]}')
+
+    result = resolve_project_dir(str(fake_project), claude_dir=str(claude_dir))
+    assert result == str(project_dir)
+
+
+def test_resolve_project_dir_with_dot_in_path(tmp_path):
+    claude_dir = tmp_path / ".claude" / "projects"
+    fake_project = tmp_path / "b.hanscomb" / "Dev"
+    fake_project.mkdir(parents=True)
+    dir_name = str(fake_project.resolve()).replace("/", "-").replace(".", "-")
+    project_dir = claude_dir / dir_name
+    project_dir.mkdir(parents=True)
 
     result = resolve_project_dir(str(fake_project), claude_dir=str(claude_dir))
     assert result == str(project_dir)

@@ -12,10 +12,15 @@ from pathlib import Path
 CLAUDE_PROJECTS_DIR = str(Path.home() / ".claude" / "projects")
 
 
+def project_dir_name(path):
+    """Slugify a path the way Claude Code names its project dirs: dots go too, not just separators."""
+    return str(path).replace("/", "-").replace(".", "-")
+
+
 def resolve_project_dir(project_path, claude_dir=CLAUDE_PROJECTS_DIR):
     """Convert a filesystem path to the matching ~/.claude/projects/ directory."""
     normalized = str(Path(project_path).resolve()).rstrip("/")
-    dir_name = normalized.replace("/", "-")
+    dir_name = project_dir_name(normalized)
     candidate = Path(claude_dir) / dir_name
     if candidate.is_dir():
         return str(candidate)
@@ -397,7 +402,7 @@ def main(argv=None, claude_dir=CLAUDE_PROJECTS_DIR):
             if not args.project:
                 # Strip home dir prefix for readability
                 dir_name = Path(pdir).name
-                home_prefix = str(Path.home()).replace("/", "-")
+                home_prefix = project_dir_name(Path.home())
                 if dir_name.startswith(home_prefix):
                     result["project"] = dir_name[len(home_prefix):].lstrip("-") or "~"
                 else:
