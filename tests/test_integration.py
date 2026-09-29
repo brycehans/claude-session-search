@@ -10,7 +10,7 @@ def create_test_project(tmp_path):
     fake_project = tmp_path / "fake-project"
     fake_project.mkdir(parents=True)
     # resolve() to match what resolve_project_dir does
-    normalized = str(fake_project.resolve()).replace("/", "-")
+    normalized = str(fake_project.resolve()).replace("/", "-").replace(".", "-")
     project_dir = tmp_path / ".claude" / "projects" / normalized
     project_dir.mkdir(parents=True)
 
